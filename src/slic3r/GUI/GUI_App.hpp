@@ -17,6 +17,7 @@
 #include "slic3r/GUI/HMS.hpp"
 #include "slic3r/GUI/Jobs/UpgradeNetworkJob.hpp"
 #include "slic3r/GUI/HttpServer.hpp"
+#include "RemoteAPI/RemoteAPIServer.hpp"
 #include "../Utils/PrintHost.hpp"
 #include "slic3r/GUI/FlashForge/MultiComDef.hpp"
 
@@ -336,6 +337,7 @@ private:
     bool             m_show_http_errpr_msgdlg{false};
     wxString         m_info_dialog_content;
     HttpServer       m_http_server;
+    RemoteAPI::Server m_remote_api_server;
     bool             m_show_gcode_window{false};
     boost::thread    m_check_network_thread;
 
@@ -549,6 +551,9 @@ private:
     void            stop_sync_user_preset();
     void            start_http_server();
     void            stop_http_server();
+    void            start_remote_api();
+    void            stop_remote_api();
+    RemoteAPI::Server &remote_api_server() { return m_remote_api_server; }
     void            switch_staff_pick(bool on);
 
     void            on_show_check_privacy_dlg(int online_login = 0);
