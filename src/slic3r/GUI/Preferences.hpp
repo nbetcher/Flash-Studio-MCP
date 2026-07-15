@@ -127,6 +127,7 @@ public:
 #endif // WIN32
 
     wxWindow* create_general_page();
+    wxWindow* create_remote_api_page();
     void create_gui_page();
     void create_sync_page();
     void create_shortcuts_page();

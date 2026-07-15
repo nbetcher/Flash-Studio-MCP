@@ -6498,6 +6498,10 @@ void GUI_App::open_preferences(size_t open_on_tab, const std::string& highlight_
         // so we put it into an inner scope
         PreferencesDialog dlg(mainframe, open_on_tab, highlight_option);
         dlg.ShowModal();
+        // Apply Remote API settings changed in the dialog: cheap and idempotent
+        // even if nothing Remote-API-related changed.
+        stop_remote_api();
+        start_remote_api(); // no-op if remote_api_enabled is false
         this->plater_->get_current_canvas3D()->force_set_focus();
         wxGetApp().set_user_region();
         if (dlg.model_personalized_rec_visible()) {

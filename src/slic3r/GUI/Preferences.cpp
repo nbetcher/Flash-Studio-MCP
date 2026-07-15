@@ -16,6 +16,7 @@
 #include "Widgets/ComboBox.hpp"
 #include "Widgets/RadioBox.hpp"
 #include "Widgets/TextInput.hpp"
+#include "slic3r/GUI/RemoteAPI/RemoteAPIConfig.hpp"
 #include <wx/listimpl.cpp>
 #include <wx/display.h>
 #include <map>
@@ -1030,12 +1031,14 @@ void PreferencesDialog::create()
     m_sizer_body->Add(m_top_line, 0, wxEXPAND, 0);
 
     auto general_page = create_general_page();
+    auto remote_api_page = create_remote_api_page();
 #if !BBL_RELEASE_TO_PUBLIC
     auto debug_page   = create_debug_page();
 #endif
 
     m_sizer_body->Add(0, 0, 0, wxTOP, FromDIP(28));
     m_sizer_body->Add(general_page, 0, wxEXPAND | wxLEFT | wxRIGHT, FromDIP(38));
+    m_sizer_body->Add(remote_api_page, 0, wxEXPAND | wxLEFT | wxRIGHT, FromDIP(38));
 #if !BBL_RELEASE_TO_PUBLIC
     m_sizer_body->Add(debug_page, 0, wxEXPAND | wxLEFT | wxRIGHT, FromDIP(38));
 #endif
@@ -1328,6 +1331,85 @@ wxWindow* PreferencesDialog::create_general_page()
     sizer_page->Add(title_develop_mode, 0, wxTOP | wxEXPAND, FromDIP(20));
     sizer_page->Add(item_develop_mode, 0, wxTOP, FromDIP(3));
     sizer_page->Add(item_skip_ams_blacklist_check, 0, wxTOP, FromDIP(3));
+
+    page->SetSizer(sizer_page);
+    page->Layout();
+    sizer_page->Fit(page);
+    return page;
+}
+
+wxWindow* PreferencesDialog::create_remote_api_page()
+{
+    auto page = new wxWindow(m_scrolledWindow, wxID_ANY);
+    page->SetBackgroundColour(*wxWHITE);
+    wxBoxSizer *sizer_page = new wxBoxSizer(wxVERTICAL);
+
+    auto title_remote_api = create_item_title(_L("Remote Control API"), page, _L("Remote Control API"));
+
+    // Enable toggle. Actually starting/stopping the server happens when the dialog
+    // closes (GUI_App::open_preferences calls stop_remote_api()/start_remote_api()
+    // right after ShowModal() returns), so these controls just persist AppConfig
+    // here, same as every other preference on this page.
+    auto item_enable = create_item_checkbox(_L("Enable Remote API"), page,
+                                            _L("Allow external tools (e.g. AI agents via MCP) to read and change "
+                                               "slicer settings and trigger slicing on this machine."),
+                                            50, "remote_api_enabled");
+
+    auto item_lan = create_item_checkbox(_L("Allow LAN access"), page,
+                                         _L("Off: only this computer (127.0.0.1). On: other devices on your "
+                                            "local network can control this slicer with the token."),
+                                         50, "remote_api_bind_lan");
+
+    // create_item_input's wxEVT_TEXT_ENTER/wxEVT_KILL_FOCUS handlers call onchange(value)
+    // unconditionally (no null check), so a default-constructed std::function<> would throw
+    // std::bad_function_call the first time this field loses focus. Pass an explicit no-op.
+    auto item_port = create_item_input(_L("Port"), "", page,
+                                       _L("TCP port for the Remote API (default 13130)"),
+                                       "remote_api_port", [](wxString) {});
+
+    // Token row: read-only display + regenerate. Bespoke (not one of the stock
+    // create_item_* factories) because it needs three widgets sharing one row and
+    // a button action that also restarts the running server.
+    wxBoxSizer *token_sizer = new wxBoxSizer(wxHORIZONTAL);
+    token_sizer->Add(0, 0, 0, wxEXPAND | wxLEFT, 23);
+
+    auto token_label = new wxStaticText(page, wxID_ANY, _L("API token"), wxDefaultPosition, wxDefaultSize, 0);
+    token_label->SetForegroundColour(DESIGN_GRAY900_COLOR);
+    token_label->SetFont(::Label::Body_13);
+    token_label->Wrap(-1);
+
+    auto token_value = new wxTextCtrl(page, wxID_ANY, wxString(app_config->get("remote_api_token")),
+                                      wxDefaultPosition, wxSize(FromDIP(220), -1), wxTE_READONLY);
+
+    auto token_btn = new Button(page, _L("Regenerate"));
+    StateColor token_btn_bg(std::pair<wxColour, int>(wxColour(206, 206, 206), StateColor::Pressed),
+                            std::pair<wxColour, int>(wxColour(238, 238, 238), StateColor::Hovered),
+                            std::pair<wxColour, int>(wxColour(255, 255, 255), StateColor::Normal));
+    token_btn->SetBackgroundColor(token_btn_bg);
+    token_btn->SetBorderColor(wxColour(38, 46, 48));
+    token_btn->SetTextColor(wxColour(38, 46, 48));
+    token_btn->SetFont(Label::Body_10);
+    token_btn->SetMinSize(wxSize(FromDIP(80), FromDIP(22)));
+    token_btn->SetCornerRadius(FromDIP(12));
+    token_btn->Bind(wxEVT_BUTTON, [this, token_value](wxCommandEvent &) {
+        auto tok = Slic3r::GUI::RemoteAPI::Config::generate_token();
+        app_config->set("remote_api_token", tok);
+        app_config->save();
+        token_value->SetValue(wxString(tok));
+        // Restart so the running server picks up the new token immediately.
+        wxGetApp().stop_remote_api();
+        wxGetApp().start_remote_api();
+    });
+
+    token_sizer->Add(token_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 3);
+    token_sizer->Add(token_value, 1, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(5));
+    token_sizer->Add(token_btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, FromDIP(5));
+
+    sizer_page->Add(title_remote_api, 0, wxTOP | wxEXPAND, FromDIP(20));
+    sizer_page->Add(item_enable, 0, wxTOP, FromDIP(3));
+    sizer_page->Add(item_lan, 0, wxTOP, FromDIP(3));
+    sizer_page->Add(item_port, 0, wxTOP, FromDIP(3));
+    sizer_page->Add(token_sizer, 0, wxTOP | wxEXPAND, FromDIP(3));
 
     page->SetSizer(sizer_page);
     page->Layout();
