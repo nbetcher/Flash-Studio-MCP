@@ -454,6 +454,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/UserManager.cpp
     GUI/HttpServer.hpp
     GUI/HttpServer.cpp
+    GUI/RemoteAPI/RemoteAPIConfig.cpp
+    GUI/RemoteAPI/RemoteAPIConfig.hpp
     GUI/FFUtils.hpp
     GUI/FFUtils.cpp
     Config/Snapshot.cpp
