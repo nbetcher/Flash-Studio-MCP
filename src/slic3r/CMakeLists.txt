@@ -458,6 +458,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/RemoteAPI/RemoteAPIConfig.hpp
     GUI/RemoteAPI/RemoteAPIServer.cpp
     GUI/RemoteAPI/RemoteAPIServer.hpp
+    GUI/RemoteAPI/RemoteAPIController.cpp
+    GUI/RemoteAPI/RemoteAPIController.hpp
     GUI/FFUtils.hpp
     GUI/FFUtils.cpp
     Config/Snapshot.cpp

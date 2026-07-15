@@ -18,6 +18,7 @@
 #include "slic3r/GUI/Jobs/UpgradeNetworkJob.hpp"
 #include "slic3r/GUI/HttpServer.hpp"
 #include "RemoteAPI/RemoteAPIServer.hpp"
+#include "RemoteAPI/RemoteAPIController.hpp"
 #include "../Utils/PrintHost.hpp"
 #include "slic3r/GUI/FlashForge/MultiComDef.hpp"
 
@@ -338,6 +339,7 @@ private:
     wxString         m_info_dialog_content;
     HttpServer       m_http_server;
     RemoteAPI::Server m_remote_api_server;
+    std::unique_ptr<RemoteAPI::Controller> m_remote_api_controller;
     bool             m_show_gcode_window{false};
     boost::thread    m_check_network_thread;
 
