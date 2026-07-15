@@ -1360,12 +1360,48 @@ wxWindow* PreferencesDialog::create_remote_api_page()
                                             "local network can control this slicer with the token."),
                                          50, "remote_api_bind_lan");
 
-    // create_item_input's wxEVT_TEXT_ENTER/wxEVT_KILL_FOCUS handlers call onchange(value)
-    // unconditionally (no null check), so a default-constructed std::function<> would throw
-    // std::bad_function_call the first time this field loses focus. Pass an explicit no-op.
-    auto item_port = create_item_input(_L("Port"), "", page,
-                                       _L("TCP port for the Remote API (default 13130)"),
-                                       "remote_api_port", [](wxString) {});
+    // Port row (bespoke). The stock create_item_input() unconditionally writes the
+    // field's raw text back to AppConfig on every Enter/focus-loss (see the handlers
+    // in create_item_input) with no empty/range guard, and shows a blank when the key
+    // is absent. For a port that meant: open this page -> blank field -> close the
+    // dialog fires KILL_FOCUS -> "" persisted, clobbering the port. So load with a
+    // sane default and only ever persist a valid 1-65535 value.
+    auto port_display = [this]() -> wxString {
+        try {
+            int p = std::stoi(app_config->get("remote_api_port"));
+            if (p >= 1 && p <= 65535) return wxString::Format("%d", p);
+        } catch (...) {}
+        return wxT("13130");
+    };
+
+    wxBoxSizer *port_sizer = new wxBoxSizer(wxHORIZONTAL);
+    port_sizer->Add(0, 0, 0, wxEXPAND | wxLEFT, 23);
+
+    auto port_title = new wxStaticText(page, wxID_ANY, _L("Port"), wxDefaultPosition, wxDefaultSize, 0);
+    port_title->SetForegroundColour(DESIGN_GRAY900_COLOR);
+    port_title->SetFont(::Label::Body_13);
+    port_title->SetToolTip(_L("TCP port for the Remote API (default 13130)"));
+    port_title->Wrap(-1);
+
+    auto port_input = new ::TextInput(page, wxEmptyString, wxEmptyString, wxEmptyString, wxDefaultPosition, DESIGN_INPUT_SIZE, wxTE_PROCESS_ENTER);
+    StateColor port_bg(std::pair<wxColour, int>(wxColour("#F0F0F1"), StateColor::Disabled), std::pair<wxColour, int>(*wxWHITE, StateColor::Enabled));
+    port_input->SetBackgroundColor(port_bg);
+    port_input->SetToolTip(_L("TCP port for the Remote API (default 13130)"));
+    port_input->GetTextCtrl()->SetValidator(wxTextValidator(wxFILTER_DIGITS));
+    port_input->GetTextCtrl()->SetValue(port_display());
+
+    auto commit_port = [this, port_input, port_display]() {
+        long p = 0;
+        if (port_input->GetTextCtrl()->GetValue().ToLong(&p) && p >= 1 && p <= 65535)
+            app_config->set("remote_api_port", std::to_string((int) p));
+        else
+            port_input->GetTextCtrl()->SetValue(port_display()); // revert; never clobber with blank/garbage
+    };
+    port_input->GetTextCtrl()->Bind(wxEVT_TEXT_ENTER, [commit_port](wxCommandEvent &e) { commit_port(); e.Skip(); });
+    port_input->GetTextCtrl()->Bind(wxEVT_KILL_FOCUS, [commit_port](wxFocusEvent  &e) { commit_port(); e.Skip(); });
+
+    port_sizer->Add(port_title, 0, wxALIGN_CENTER_VERTICAL | wxALL, 3);
+    port_sizer->Add(port_input, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(5));
 
     // Token row: read-only display + regenerate. Bespoke (not one of the stock
     // create_item_* factories) because it needs three widgets sharing one row and
@@ -1408,7 +1444,7 @@ wxWindow* PreferencesDialog::create_remote_api_page()
     sizer_page->Add(title_remote_api, 0, wxTOP | wxEXPAND, FromDIP(20));
     sizer_page->Add(item_enable, 0, wxTOP, FromDIP(3));
     sizer_page->Add(item_lan, 0, wxTOP, FromDIP(3));
-    sizer_page->Add(item_port, 0, wxTOP, FromDIP(3));
+    sizer_page->Add(port_sizer, 0, wxTOP, FromDIP(3));
     sizer_page->Add(token_sizer, 0, wxTOP | wxEXPAND, FromDIP(3));
 
     page->SetSizer(sizer_page);
