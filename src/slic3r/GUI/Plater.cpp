@@ -14376,6 +14376,14 @@ bool Plater::is_background_process_slicing() const
     return p->m_is_slicing;
 }
 
+// Remote API (F2): abort the background slice from the API's cancel route.
+void Plater::stop_background_slicing()
+{
+    if (p->background_process.running())
+        p->background_process.stop();
+    p->m_is_slicing = false;
+}
+
 //BBS: update slicing context
 void Plater::update_slicing_context_to_current_partplate()
 {
