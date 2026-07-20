@@ -5200,6 +5200,7 @@ Semver get_version(const std::string& str, const std::regex& regexp) {
 
 void GUI_App::check_new_version_sf(bool by_user, bool use_uid)
 {
+    return; // orca-mcp: this fork must never self-update to stock Flash Studio (would remove the Remote API)
     if (mainframe == nullptr || mainframe->is_shutdown()) {
         return;
     }
