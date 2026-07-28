@@ -3741,6 +3741,17 @@ m_no_render_path = false;
 #endif // ENABLE_GCODE_VIEWER_STATISTICS
 }
 
+void GCodeViewer::render_toolpaths_with_camera(const Camera& camera)
+{
+    // Flash Studio is still on the legacy (pre-libvgcode) toolpath renderer, whose
+    // render_toolpaths() reads the plater camera itself. The offscreen render path in
+    // GLCanvas3D temporarily swaps that plater camera for the one handed in here, so
+    // forwarding is exactly equivalent - the assert documents that contract.
+    assert(&camera == &wxGetApp().plater()->get_camera());
+    (void) camera;
+    render_toolpaths();
+}
+
 void GCodeViewer::render_toolpaths()
 {
     const Camera& camera = wxGetApp().plater()->get_camera();
