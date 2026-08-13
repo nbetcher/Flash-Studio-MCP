@@ -1423,7 +1423,7 @@ wxWindow* PreferencesDialog::create_remote_api_page()
     token_label->Wrap(-1);
 
     auto token_value = new wxTextCtrl(page, wxID_ANY, wxString(app_config->get("remote_api_token")),
-                                      wxDefaultPosition, wxSize(FromDIP(220), -1), wxTE_READONLY);
+                                      wxDefaultPosition, wxSize(FromDIP(120), -1), wxTE_READONLY);
 
     auto token_btn = new Button(page, _L("Regenerate"));
     StateColor token_btn_bg(std::pair<wxColour, int>(wxColour(206, 206, 206), StateColor::Pressed),
@@ -1446,6 +1446,8 @@ wxWindow* PreferencesDialog::create_remote_api_page()
     });
 
     token_sizer->Add(token_label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 3);
+    // Proportion 1: stretch to the row, so the field never pushes the Regenerate
+    // button past the dialog edge (a fixed wide field overflowed and forced an hscroll).
     token_sizer->Add(token_value, 1, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(5));
     token_sizer->Add(token_btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, FromDIP(5));
 
