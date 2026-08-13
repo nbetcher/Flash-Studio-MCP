@@ -6,6 +6,8 @@
 > <img src="doc/images/remote-api-preferences.png" width="480" alt="Remote API preferences: Enable Remote API, Allow LAN access, port and API token fields">
 >
 > \*Screenshot is from the upstream OrcaSlicer MCP fork, which shows the same fields on their own Preferences tab; Flash Studio renders them as a section of the Preferences page.
+>
+> \*The token shown here is a dummy example. Flash Studio generates a unique token for you; keep yours private.
 
 # Orca-Flashforge
 Orca-Flashforge is an open source slicer for FDM printers.
