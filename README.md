@@ -1,5 +1,11 @@
 > [!NOTE]
 > **This is the MCP fork of Flash Studio (Orca-Flashforge).** It adds a token-authenticated local Remote API so AI assistants can work the slicer: load models, edit settings, slice, read per-feature breakdowns, and render the plate. The Remote API is ported from the [`remote-api`](https://github.com/MaxEllis/OrcaSlicer/tree/remote-api) branch of MaxEllis/OrcaSlicer; pair this build with the [orcaslicer-mcp](https://github.com/MaxEllis/orcaslicer-mcp) server. Everything below this note is the upstream Orca-Flashforge README.
+>
+> Enable the API in **Preferences** (Ctrl+P) under **Remote Control API**: tick **Enable Remote API**, copy the token, and tick **Allow LAN access** only if the MCP server runs on another machine.
+>
+> <img src="doc/images/remote-api-preferences.png" width="480" alt="Remote API preferences: Enable Remote API, Allow LAN access, port and API token fields">
+>
+> \*Screenshot is from the upstream OrcaSlicer MCP fork, which shows the same fields on their own Preferences tab; Flash Studio renders them as a section of the Preferences page.
 
 # Orca-Flashforge
 Orca-Flashforge is an open source slicer for FDM printers.
