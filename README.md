@@ -8,6 +8,10 @@
 > \*Screenshot is from the upstream OrcaSlicer MCP fork, which shows the same fields on their own Preferences tab; Flash Studio renders them as a section of the Preferences page.
 >
 > \*The token shown here is a dummy example. Flash Studio generates a unique token for you; keep yours private.
+>
+> The Remote API in this build is MaxEllis' work. If it saves you time and you feel like saying thanks, you can buy them a coffee.
+>
+> <a href="https://buymeacoffee.com/maxellis"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="50"></a>
 
 # Orca-Flashforge
 Orca-Flashforge is an open source slicer for FDM printers.
