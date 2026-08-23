@@ -36,7 +36,7 @@ jobs:
           lfs: 'true'
 
       - name: load cached deps
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: ${{ inputs.cache-path }}
           key: ${{ inputs.cache-key }}
@@ -90,6 +90,27 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "build_release_vs2022.bat deps failed ($LASTEXITCODE)" }
             .\build_release_vs2022.bat pack
             if ($LASTEXITCODE -ne 0) { throw "build_release_vs2022.bat pack failed ($LASTEXITCODE)" }
+
+      # The deps build can leave a partial tree behind (a failed dependency used to
+      # return success). Check the bundle really contains wxWidgets before anyone
+      # caches it - a poisoned cache would otherwise be restored by every later run
+      # and fail far away, while configuring the slicer.
+      - name: Verify the dependency bundle is complete
+        if: startsWith(inputs.os, 'windows')
+        shell: pwsh
+        run: |
+          $dest = "${{ inputs.cache-path }}"
+          if (-not (Test-Path $dest)) { throw "Dependency destdir $dest does not exist - nothing was built." }
+          $wx = Get-ChildItem -Path $dest -Recurse -Filter 'wx*.lib' -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $wx) {
+              Write-Host "--- top of $dest ---"
+              Get-ChildItem -Path $dest -Recurse -Depth 3 -ErrorAction SilentlyContinue |
+                  Select-Object -ExpandProperty FullName -First 60 | ForEach-Object { Write-Host $_ }
+              throw "No wxWidgets libraries under $dest. The dependency build did not complete; refusing to publish or cache this tree."
+          }
+          $size = [math]::Round((Get-ChildItem $dest -Recurse -File -ErrorAction SilentlyContinue |
+                  Measure-Object -Property Length -Sum).Sum / 1MB)
+          Write-Host "wxWidgets present ($($wx.Name)); dependency bundle is $size MB."
 
       - name: Build on Mac ${{ inputs.arch }}
         if: inputs.os == 'macos-14'
@@ -156,6 +177,16 @@ jobs:
           name: OrcaSlicer_dep_ubuntu_${{ env.ubuntu-ver }}_${{ env.date }}
           path: ${{ github.workspace }}/deps/build/OrcaSlicer_dep_ubuntu_*.tar.gz
 
+      # Explicit save rather than actions/cache's automatic post step: that one runs
+      # even when the job failed, which is how a half-built dependency tree gets
+      # cached under a key every later run then trusts.
+      - name: save deps cache
+        if: success()
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ inputs.cache-path }}
+          key: ${{ inputs.cache-key }}
+
   build_orca:
     name: Build OrcaSlicer
     needs: [build_deps]
@@ -167,3 +198,4 @@ jobs:
       os: ${{ inputs.os }}
       arch: ${{ inputs.arch }}
     secrets: inherit
+

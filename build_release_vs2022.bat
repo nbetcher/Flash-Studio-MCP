@@ -48,6 +48,11 @@ echo on
 cmake ../ -G "Visual Studio 17 2022" -A x64 -DDESTDIR="%DEPS%" -DCMAKE_BUILD_TYPE=%build_type% -DDEP_DEBUG=%debug% -DORCA_INCLUDE_DEBUG_INFO=%debuginfo%
 cmake --build . --config %build_type% --target deps -- -m
 @echo off
+REM Propagate the build result. This used to be an unconditional `exit /b 0`, so a
+REM failed dependency (e.g. a source archive whose hash no longer matched) returned
+REM success and left a partial deps tree behind - the breakage then showed up much
+REM later as "Could NOT find wxWidgets" while configuring the slicer.
+if errorlevel 1 exit /b %errorlevel%
 
 if "%1"=="deps" exit /b 0
 
@@ -59,8 +64,12 @@ cd %build_dir%
 
 echo on
 cmake .. -G "Visual Studio 17 2022" -A x64 -DBBL_RELEASE_TO_PUBLIC=1 -DCMAKE_PREFIX_PATH="%DEPS%/usr/local" -DCMAKE_INSTALL_PREFIX="./Orca-Flashforge" -DCMAKE_BUILD_TYPE=%build_type% -DWIN10SDK_PATH="%WindowsSdkDir%Include\%WindowsSDKVersion%\"
+@echo off
+if errorlevel 1 exit /b %errorlevel%
+echo on
 cmake --build . --config %build_type% --target ALL_BUILD -- -m
 @echo off
+if errorlevel 1 exit /b %errorlevel%
 cd ..
 call run_gettext.bat
 cd %build_dir%
