@@ -1360,13 +1360,11 @@ wxWindow* PreferencesDialog::create_remote_api_page()
                                             "local network can control this slicer with the token."),
                                          50, "remote_api_bind_lan");
 
-    auto item_notify = create_item_checkbox(
-        _L("Notify on API changes"),
-        _L("Show a notification in OrcaSlicer when an external tool changes settings, "
-           "loads or edits objects, or switches presets. Slicing and arrange/orient use "
-           "OrcaSlicer's own feedback."),
-        "remote_api_notify");
-    g_sizer->Add(item_notify);
+    auto item_notify = create_item_checkbox(_L("Notify on API changes"), page,
+                                            _L("Show a notification in Flash Studio when an external tool changes "
+                                               "settings, loads or edits objects, or switches presets. Slicing and "
+                                               "arrange/orient use Flash Studio's own feedback."),
+                                            50, "remote_api_notify");
 
     // Port row (bespoke). The stock create_item_input() unconditionally writes the
     // field's raw text back to AppConfig on every Enter/focus-loss (see the handlers
@@ -1454,6 +1452,7 @@ wxWindow* PreferencesDialog::create_remote_api_page()
     sizer_page->Add(title_remote_api, 0, wxTOP | wxEXPAND, FromDIP(20));
     sizer_page->Add(item_enable, 0, wxTOP, FromDIP(3));
     sizer_page->Add(item_lan, 0, wxTOP, FromDIP(3));
+    sizer_page->Add(item_notify, 0, wxTOP, FromDIP(3));
     sizer_page->Add(port_sizer, 0, wxTOP, FromDIP(3));
     sizer_page->Add(token_sizer, 0, wxTOP | wxEXPAND, FromDIP(3));
 

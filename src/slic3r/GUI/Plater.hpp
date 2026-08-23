@@ -492,6 +492,7 @@ public:
     void config_change_notification(const DynamicPrintConfig &config, const std::string& key);
     void on_config_change(const DynamicPrintConfig &config);
     void force_filament_colors_update();
+    void reload_print(); // Remote API: reload the G-code preview on demand
     void force_print_bed_update();
     // On activating the parent window.
     void on_activate();

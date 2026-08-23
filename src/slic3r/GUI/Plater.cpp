@@ -13319,6 +13319,14 @@ void Plater::force_filament_colors_update()
 #endif
 }
 
+// Remote API: force the preview panel to (re)load the current G-code. Mirrors
+// upstream OrcaSlicer's Plater::reload_print() - Plater::priv is private, so the
+// controller cannot reach p->preview itself.
+void Plater::reload_print()
+{
+    p->preview->reload_print();
+}
+
 void Plater::force_print_bed_update()
 {
     // Fill in the printer model key with something which cannot possibly be valid, so that Plater::on_config_change() will update the print bed

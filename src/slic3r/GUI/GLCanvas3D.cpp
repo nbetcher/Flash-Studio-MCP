@@ -5799,7 +5799,7 @@ static void debug_output_thumbnail(const ThumbnailData& thumbnail_data)
 #endif // ENABLE_THUMBNAIL_GENERATOR_DEBUG_OUTPUT
 
 bool GLCanvas3D::render_plate_thumbnail(ThumbnailData& thumbnail_data, unsigned int w, unsigned int h,
-                                        Camera::ViewAngleType camera_view_angle_type, bool frame_object)
+                                        const std::string& camera_view_angle_type, bool frame_object)
 {
     // Remote API: offscreen render of the current plate. Unlike render_thumbnail()
     // (which frames the objects and deliberately skips the bed - see
@@ -5927,7 +5927,7 @@ bool GLCanvas3D::render_plate_thumbnail(ThumbnailData& thumbnail_data, unsigned 
 }
 
 bool GLCanvas3D::render_gcode_thumbnail(ThumbnailData& thumbnail_data, unsigned int w, unsigned int h,
-                                        Camera::ViewAngleType camera_view_angle_type, bool frame_object)
+                                        const std::string& camera_view_angle_type, bool frame_object)
 {
     // Remote API: offscreen render of the gcode preview (toolpaths incl. support).
     // FBO scaffold mirrors render_thumbnail_framebuffer(); camera setup mirrors

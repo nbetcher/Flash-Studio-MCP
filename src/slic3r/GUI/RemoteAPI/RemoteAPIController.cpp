@@ -1183,11 +1183,12 @@ Response Controller::handle_plate_render(const std::string &target)
 
     std::string angle = qparam("angle");
     if (angle.empty()) angle = "iso";
-    static const std::map<std::string, Camera::ViewAngleType> angle_map = {
-        {"iso",    Camera::ViewAngleType::Iso},   {"top",  Camera::ViewAngleType::Top},
-        {"front",  Camera::ViewAngleType::Front}, {"left", Camera::ViewAngleType::Left},
-        {"right",  Camera::ViewAngleType::Right}, {"rear", Camera::ViewAngleType::Rear},
-        {"bottom", Camera::ViewAngleType::Bottom}};
+    // Flash Studio's Camera has no ViewAngleType enum (an upstream 2.3.2 addition);
+    // it only exposes select_view(const std::string&). Map straight onto the
+    // direction strings that overload understands.
+    static const std::map<std::string, std::string> angle_map = {
+        {"iso", "iso"},   {"top",  "top"},  {"front", "front"}, {"left", "left"},
+        {"right", "right"}, {"rear", "rear"}, {"bottom", "bottom"}};
     auto ait = angle_map.find(angle);
     if (ait == angle_map.end())
         return { 400, {{"error", "bad_param"}, {"param", "angle"},
@@ -1212,7 +1213,7 @@ Response Controller::handle_plate_render(const std::string &target)
     w = std::min(std::max(w, 64L), 2048L);
     h = std::min(std::max(h, 64L), 2048L);
 
-    const Camera::ViewAngleType va           = ait->second;
+    const std::string           va           = ait->second;
     const bool                  preview      = (view == "preview");
     const bool                  frame_object = frame.empty() ? preview : (frame == "object");
     // Filled on the GUI thread; run_on_ui blocks until the lambda completes, and
