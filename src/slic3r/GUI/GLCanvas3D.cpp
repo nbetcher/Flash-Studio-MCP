@@ -5892,7 +5892,8 @@ bool GLCanvas3D::render_plate_thumbnail(ThumbnailData& thumbnail_data, unsigned 
         GLShaderProgram *shader = wxGetApp().get_shader("thumbnail");
         if (shader != nullptr) {
             ModelObjectPtrs &      model_objects   = wxGetApp().model().objects;
-            std::vector<ColorRGBA> extruder_colors = wxGetApp().plater()->get_extruders_colors();
+            // Free function from 3DScene.hpp here; upstream 2.3.2 moved it onto Plater.
+            std::vector<ColorRGBA> extruder_colors = get_extruders_colors();
             shader->start_using();
             shader->set_uniform("emission_factor", 0.1f);
             shader->set_uniform("ban_light", false);
@@ -5943,7 +5944,9 @@ bool GLCanvas3D::render_gcode_thumbnail(ThumbnailData& thumbnail_data, unsigned 
             return false;
         const std::vector<std::string> tool_colors =
             wxGetApp().plater()->get_extruder_colors_from_plater_config(gcode_result);
-        load_gcode_preview(*gcode_result, tool_colors, std::vector<std::string>(), false);
+        // Three-parameter form here: upstream 2.3.2 added str_color_print_colors, for
+        // which the port passed an empty vector, so dropping it changes nothing.
+        load_gcode_preview(*gcode_result, tool_colors, false);
         if (!m_gcode_viewer.has_data())
             return false;
     }

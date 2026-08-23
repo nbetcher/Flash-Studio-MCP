@@ -586,7 +586,9 @@ void Controller::bind_plater_events()
                 if (mv.type != EMoveType::Extrude) continue;
                 int r = (int) mv.extrusion_role;
                 if (r <= 0 || r >= erCount) continue;
-                double t = mv.time[0];
+                // MoveVertex::time is a plain float here; upstream 2.3.2 made it an
+                // array indexed by ETimeMode, where [0] is the Normal mode this wants.
+                double t = mv.time;
                 double vr = mv.volumetric_rate(); // feedrate * mm3_per_mm
                 agg[r].time_s += t;
                 agg[r].sum_ft += vr * t;
