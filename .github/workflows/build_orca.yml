@@ -41,7 +41,7 @@ jobs:
           cmakeVersion: "~3.28.0"  # use most recent 3.28.x version
           
       - name: Get the version and date on Ubuntu and macOS
-        if: inputs.os != 'windows-latest'
+        if: ${{ !startsWith(inputs.os, 'windows') }}
         run: |
           ver_pure=$(grep 'set(SoftFever_VERSION' version.inc | cut -d '"' -f2)
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -55,7 +55,7 @@ jobs:
         shell: bash
 
       - name: Get the version and date on Windows
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         run: |
           $date = Get-Date -Format 'yyyyMMdd'
           $ref = "${{ github.ref }}"
@@ -147,19 +147,33 @@ jobs:
 # assets into SoftFever/OrcaSlicer's nightly release, which no fork can write
 # to. The build products are published as workflow artifacts instead.
       - name: setup MSVC
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         uses: microsoft/setup-msbuild@v2
 
       - name: Install nsis
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         run: choco install nsis
+
+      # Also checked here, not just in build_deps: when the dependency cache is
+      # warm that job is skipped entirely and this is the first step to need VS.
+      - name: Verify Visual Studio 2022 is present
+        if: startsWith(inputs.os, 'windows')
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -products * -version "[17.0,18.0)" -requires Microsoft.Component.MSBuild -property installationPath -latest
+          if (-not $vs) {
+              & $vswhere -products * -property catalog_productDisplayVersion
+              throw "No Visual Studio 2022 (v17) on this runner. build_release_vs2022.bat generates for 'Visual Studio 17 2022'; pick a runner image that still ships it, or move the generator to the version above."
+          }
+          Write-Host "Found Visual Studio 2022 at $vs"
 
       # The SDK shipped on the hosted Windows runner changes over time, so resolve
       # it rather than pinning a version. build_release_vs2022.bat feeds
       # %WindowsSdkDir%Include\%WindowsSDKVersion% to -DWIN10SDK_PATH, and a stale
       # pin makes CMake silently drop HAS_WIN10SDK (Windows 3D printing support).
       - name: Locate Windows 10 SDK
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         shell: pwsh
         run: |
           $kitsRoot = (Get-ItemProperty 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows Kits\Installed Roots' -ErrorAction SilentlyContinue).KitsRoot10
@@ -176,24 +190,24 @@ jobs:
           }
 
       - name: Build slicer Win
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         working-directory: ${{ github.workspace }}
         run: .\build_release_vs2022.bat slicer
 
       - name: Create installer Win
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         working-directory: ${{ github.workspace }}/build
         run: |
           cpack -G NSIS
 
       - name: Pack PDB
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         working-directory: ${{ github.workspace }}/build/src/Release
         shell: cmd
         run: '"C:/Program Files/7-Zip/7z.exe" a -m0=lzma2 -mx9 Debug_PDB_${{ env.ver }}_for_developers_only.7z  *.pdb'
 
       - name: Upload artifacts Win zip
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         uses: actions/upload-artifact@v4
         with:
           name: Flash_Studio_Windows_${{ env.ver }}_portable
@@ -201,7 +215,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload artifacts Win installer
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         uses: actions/upload-artifact@v4
         with:
           name: Flash_Studio_Windows_${{ env.ver }}_installer
@@ -209,7 +223,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload artifacts Win PDB
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         uses: actions/upload-artifact@v4
         with:
           name: PDB

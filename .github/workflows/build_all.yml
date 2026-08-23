@@ -50,9 +50,16 @@ jobs:
         include:
           # Windows x64 only. The Linux/macOS matrix entries and the Flatpak job
           # below are disabled on this fork - re-add them here to turn them back on.
+          #
+          # windows-2025 rather than windows-latest on purpose: windows-latest now
+          # resolves to the windows-2025-vs2026 image, which ships Visual Studio 2026
+          # and no VS 2022, so the -G "Visual Studio 17 2022" generator in
+          # build_release_vs2022.bat finds no VS instance at all. windows-2025 is the
+          # same OS with VS 2022 17.14. The downstream jobs gate on
+          # startsWith(inputs.os, 'windows'), so this label is free to change.
           # - os: ubuntu-20.04
           # - os: ubuntu-24.04
-          - os: windows-latest
+          - os: windows-2025
           # - os: macos-14
           #   arch: x86_64
           # - os: macos-14

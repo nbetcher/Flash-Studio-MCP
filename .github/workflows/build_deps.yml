@@ -46,29 +46,50 @@ jobs:
           cmakeVersion: "~3.28.0"  # use most recent 3.28.x version
 
       - name: setup dev on Windows
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         uses: microsoft/setup-msbuild@v2
 
       - name: Get the date on Ubuntu and macOS
-        if: inputs.os != 'windows-latest'
+        if: ${{ !startsWith(inputs.os, 'windows') }}
         run: echo "date=$(date +'%Y%m%d')" >> $GITHUB_ENV
         shell: bash
 
       - name: Get the date on Windows
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         run: echo "date=$(Get-Date -Format 'yyyyMMdd')" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
         shell: pwsh
 
 
       # Build Dependencies
+      # Fail loudly if the runner image ever swaps VS 2022 out again. Without this
+      # the CMake "could not find any instance of Visual Studio" error is buried in
+      # a step that still reports success (see the exit-code handling below).
+      - name: Verify Visual Studio 2022 is present
+        if: startsWith(inputs.os, 'windows')
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -products * -version "[17.0,18.0)" -requires Microsoft.Component.MSBuild -property installationPath -latest
+          if (-not $vs) {
+              & $vswhere -products * -property catalog_productDisplayVersion
+              throw "No Visual Studio 2022 (v17) on this runner. build_release_vs2022.bat generates for 'Visual Studio 17 2022'; pick a runner image that still ships it, or move the generator to the version above."
+          }
+          Write-Host "Found Visual Studio 2022 at $vs"
+
       - name: Build on Windows
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         working-directory: ${{ github.workspace }}
         run: |
+            # Each command's exit code is checked explicitly: the pwsh wrapper only
+            # propagates the LAST statement's status, so a failed dependency build
+            # followed by a successful `pack` used to mark this step green and leave
+            # the cache empty - which then surfaced far away as a cache miss.
             choco install strawberryperl
+            if ($LASTEXITCODE -ne 0) { throw "choco install strawberryperl failed ($LASTEXITCODE)" }
             .\build_release_vs2022.bat deps
+            if ($LASTEXITCODE -ne 0) { throw "build_release_vs2022.bat deps failed ($LASTEXITCODE)" }
             .\build_release_vs2022.bat pack
-            cd ${{ github.workspace }}/deps/build
+            if ($LASTEXITCODE -ne 0) { throw "build_release_vs2022.bat pack failed ($LASTEXITCODE)" }
 
       - name: Build on Mac ${{ inputs.arch }}
         if: inputs.os == 'macos-14'
@@ -119,11 +140,12 @@ jobs:
           path: ${{ github.workspace }}/deps/build_${{ inputs.arch }}/Orca-Flashforge_dep*.tar.gz
 
       - name: Upload Windows artifacts
-        if: inputs.os == 'windows-latest'
+        if: startsWith(inputs.os, 'windows')
         uses: actions/upload-artifact@v4
         with:
           name: Orca-Flashforge_dep_win64_${{ env.date }}
           path: ${{ github.workspace }}/deps/build/Orca-Flashforge_dep*.zip
+          if-no-files-found: error # an empty deps zip means the dependency build quietly failed
 
       - name: Upload Ubuntu artifacts
         if: ${{ ! env.ACT && inputs.os == 'ubuntu-20.04' || inputs.os == 'ubuntu-24.04' }}
