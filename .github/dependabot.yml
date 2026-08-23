@@ -5,6 +5,12 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    # One PR for the whole ecosystem instead of one per action. Same set of
+    # upgrades, but a single Build all run per month rather than one per bump -
+    # and a Windows build here is measured in hours.
+    groups:
+      github-actions:
+        patterns: ["*"]
     ignore: # Only suggest major updates for built-in actions
       - dependency-name: "github/*"
         update-types: ["version-update:semver-patch", "version-update:semver-minor"]
@@ -15,4 +21,7 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    groups:
+      docker:
+        patterns: ["*"]
   # no support for c/cpp
