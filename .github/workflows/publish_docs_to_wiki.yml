@@ -1,12 +1,14 @@
 name: Publish docs to Wiki
 
-# Trigger this action only if there are changes pushed to the doc/** directory under the main branch
+# Disabled as an automatic trigger on this fork: the port adds files under doc/,
+# which would fire this on every push to main and fail without a GH_WIKI_PAT
+# secret and an initialised wiki. Run it by hand once both exist.
 on:
-  push:
-    paths:
-      - doc/** # This includes all sub folders
-    branches:
-      - main # This can be changed to any branch of your preference
+  # push:
+  #   paths:
+  #     - doc/** # This includes all sub folders
+  #   branches:
+  #     - main # This can be changed to any branch of your preference
 
   workflow_dispatch:
     inputs:
@@ -18,8 +20,7 @@ on:
 env:
   USER_TOKEN: ${{ secrets.GH_WIKI_PAT }} # This is the repository secret personal access token
   USER_NAME: ${{ vars.BOT_USER_NAME }} # Enter the username of your (bot) account
-  OWNER: ${{ github.event.repository.owner.name }} # This is the repository owner
-  REPOSITORY_NAME: ${{ github.event.repository.name }} # This is the repository name
+  REPOSITORY: ${{ github.repository }} # owner/name of THIS repo, not the upstream one
 
 jobs:
   publish_docs_to_wiki:
@@ -30,12 +31,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check the wiki token is configured
+        run: |
+          if [ -z "$USER_TOKEN" ]; then
+            echo "::error::GH_WIKI_PAT is not set. Add a PAT with wiki write access before running this workflow."
+            exit 1
+          fi
+
       # 1. Clone the current wiki master branch to a folder named `tmp_wiki`
       - name: Pull content from wiki
         run: |
-          git config --global user.name "$USER_NAME"
-          git config --global user.email "$USER_NAME"@users.noreply.github.com
-          git clone https://"$USER_TOKEN"@github.com/SoftFever/"$REPOSITORY_NAME".wiki.git tmp_wiki
+          git config --global user.name "${USER_NAME:-github-actions[bot]}"
+          git config --global user.email "${USER_NAME:-github-actions[bot]}"@users.noreply.github.com
+          git clone https://"$USER_TOKEN"@github.com/"$REPOSITORY".wiki.git tmp_wiki
       # 4. Synchronize differences between `doc` & `tmp_wiki`
       # 5. Push new Wiki content
       - name: Push main repo content to wiki
