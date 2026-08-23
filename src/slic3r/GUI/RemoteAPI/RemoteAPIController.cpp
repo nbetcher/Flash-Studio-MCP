@@ -833,7 +833,12 @@ Response Controller::handle_select_preset(const std::string &body)
         discard_if_dirty(bundle->filaments);
         discard_if_dirty(bundle->sla_materials);
         discard_if_dirty(bundle->printers);
-        bool ok = tab->select_preset(name, false, "", /*force_select=*/true, /*force_no_transfer=*/true);
+        // Flash Studio's Tab::select_preset has no force_no_transfer parameter (added
+        // upstream in 2.3.2). It only ever overrides `no_transfer`, which is read solely
+        // by may_discard_current_dirty_preset() - and that is reached only when the
+        // preset is dirty. discard_if_dirty() above has just cleared that, so the
+        // argument would be dead here anyway.
+        bool ok = tab->select_preset(name, false, "", /*force_select=*/true);
         if (!ok) return {{"error", "select_cancelled"}};
         return {{"selected", name}};
     });
